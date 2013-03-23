@@ -17,15 +17,16 @@
   (gen-msg "add-result"  (+ left right)))
 
 (defn handle-message
-  [msg]
+  [msg ch]
   (log/info :received-message msg)
   (let [array (into []  (.split msg "\r"))
         header (first array)
         items (into [] (rest array))]
     (case header
       "add" (add items)
-      "login" (login/logon items)
+      "login" (login/logon items ch)
       "hello" (login/hello)
+      "hello-to" (login/hello-to items)
       (log/warn :invalied-message msg))))
 
 (defn handler [ch client-info]
@@ -33,8 +34,9 @@
   (prn (class ch))
   (receive-all ch
                (fn [message]
-                 (if-let [result (handle-message message)]
-                   (enqueue ch result)))))
+                 (if-let [result (handle-message message ch)]
+                   (if (string? result)
+                     (enqueue ch result))))))
 
 (defn start-server
   ([handler options]
