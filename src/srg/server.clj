@@ -6,7 +6,9 @@
         [aleph.netty core]
         [srg.utils])
   (:require [clojure.tools.logging :as log]
-            [srg.login :as login]))
+            [srg.login :as login]
+            [srg.game :as game]
+            [srg.session :as session]))
 
 (def fr
   (finite-frame :int32 (string :utf-8)))
@@ -27,6 +29,7 @@
       "login" (login/logon items ch)
       "hello" (login/hello)
       "hello-to" (login/hello-to items)
+      "queue" (game/queue-for-game items)
       (log/warn :invalied-message msg))))
 
 (defn handler [ch client-info]
@@ -36,7 +39,10 @@
                (fn [message]
                  (if-let [result (handle-message message ch)]
                    (if (string? result)
-                     (enqueue ch result))))))
+                     (enqueue ch result)
+                     (doseq [to-cmd result]
+                       (session/send-to-user (:to to-cmd)
+                                             (:message to-cmd))))))))
 
 (defn start-server
   ([handler options]
