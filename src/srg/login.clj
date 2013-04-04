@@ -8,7 +8,7 @@
 (defhandler logon [items ch] [:string username :string password]
   (update-session-user! username)
   (swap! sessions add-session! username ch)
-  (gen-msg "welcome" username))
+  (enqueue ch (gen-msg "welcome" username)))
 
 (defn hello
   []

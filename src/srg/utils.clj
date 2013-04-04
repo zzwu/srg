@@ -34,4 +34,28 @@
   (let [str-seq (interpose "\r" (into [header] items))]
     (apply str str-seq)))
 
+(defn static? [field]
+  (java.lang.reflect.Modifier/isStatic
+   (.getModifiers field)))
+
+(defn get-record-field-names [record]
+  (->> record
+       .getDeclaredFields
+       (remove static?)
+       (map #(.getName %))
+       (remove #{"__meta" "__extmap"})))
+
+(def action-header-changefn-map (atom {}))
+
+(defmacro defplayaction [name header attributes]
+  (let [pair-count (/ (count attributes) 2)
+        types (into [] (map first (partition 2 attributes)))
+        type-fns (into [] (map change-fn types))
+        symbols (into [] (map second (partition 2 attributes)))
+        symbol-keywrods (into [] (map keyword symbols))]
+    `(do
+       (swap! action-header-changefn-map assoc ~header (fn [items#]
+                                                          (let [type-items# (to-type-items ~types items#)
+                                                                map-items# (map vector ~symbol-keywrods type-items#)]
+                                                            (into {:action (keyword :guess)} map-items#)))))))
 

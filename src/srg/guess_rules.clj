@@ -31,7 +31,8 @@
   (let [{:keys [players]} event
         seats (into {} (map #(vector %2 %1) players (range 2)))]
     (-> room
-        (assoc :seats seats))))
+        (assoc :seats seats)
+        (assoc :game-id (:game-id event)))))
 
 (defmethod handle-game-event :current-index
   [room event]
@@ -98,7 +99,8 @@
 (defmethod play-action :start-game
   [room action]
   [{:game-event :start-game
-    :players (:players action)}
+    :players (:players action)
+    :game-id (:game-id action)}
    (next-player room)])
 
 (defmethod play-action :guess
@@ -151,11 +153,12 @@
     (handle-game-event this game-event)))
 
 (defn room-constructor
-  [init-room]
-  (merge (GuessRoom.) init-room))
+  ([init-room]
+     (merge (GuessRoom.) init-room))
+  ([] (room-constructor init-room)))
 
 (def actions
-  [{:action :start-game, :players [{:player-id "zzwu"} {:player-id "cdf"}]}
+  [{:action :start-game, :players [{:player-id "zzwu"} {:player-id "cdf"}] :game-id "kkk"}
    {:action :guess :kind 1}
    {:action :guess :kind 1}
    {:action :guess :kind 2}

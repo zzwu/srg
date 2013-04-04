@@ -15,8 +15,9 @@
 
 (def default-options {:port 10000, :frame fr})
 
-(defhandler add [items] [:int left :int right]
-  (gen-msg "add-result"  (+ left right)))
+(defhandler add [items ch] [:int left :int right]
+  (let [msg (gen-msg "add-result"  (+ left right))]
+    (enqueue ch msg)))
 
 (defn handle-message
   [msg ch]
@@ -25,11 +26,12 @@
         header (first array)
         items (into [] (rest array))]
     (case header
-      "add" (add items)
+      "add" (add items ch)
       "login" (login/logon items ch)
-      "hello" (login/hello)
+      "hello" (enqueue ch (login/hello))
       "hello-to" (login/hello-to items)
       "queue" (game/queue-for-game items)
+      "play-game" (game/play-game items)
       (log/warn :invalied-message msg))))
 
 (defn handler [ch client-info]
@@ -37,12 +39,7 @@
   (prn (class ch))
   (receive-all ch
                (fn [message]
-                 (if-let [result (handle-message message ch)]
-                   (if (string? result)
-                     (enqueue ch result)
-                     (doseq [to-cmd result]
-                       (session/send-to-user (:to to-cmd)
-                                             (:message to-cmd))))))))
+                 (handle-message message ch))))
 
 (defn start-server
   ([handler options]
