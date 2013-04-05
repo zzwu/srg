@@ -36,7 +36,6 @@
 
 (defn handler [ch client-info]
   (log/info :channel ch :class-ch (class ch))
-  (prn (class ch))
   (receive-all ch
                (fn [message]
                  (handle-message message ch))))

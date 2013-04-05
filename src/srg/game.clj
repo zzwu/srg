@@ -47,12 +47,14 @@
     (send new-game-inst-agt play-game-action start-action)))
 
 (defhandler queue-for-game
-  [items] [:string username :string game-type]
-  (if-let [players (queue/add-queue-player! game-type username)]
+  [items] [:string game-type]
+  (if-let [players (queue/add-queue-player! game-type (session/current-username))]
     (start-game! game-type players)))
 
 (defn play-game [items]
   (if-let [action (actions/to-play-action items)]
-    (when-let [game-agt (get @games (:id action))]
-      (log/info :play-game @game-agt :action action)
-      (send game-agt play-game-action action))))
+    (if-let [game-agt (get @games (:id action))]
+      (do (log/info :play-game @game-agt :action action)
+          (send game-agt play-game-action action))
+      (log/warn :can-not-find-game (:id action)))
+    (log/warn :can-not-parse-action-form-items items)))

@@ -1,5 +1,6 @@
 (ns srg.guess-rules
-  (:require [srg.protocols :as p]))
+  (:require [srg.protocols :as p]
+            [clojure.tools.logging :as log]))
 
 (def kinds {1 :rock 2 :scissors 3 :paper})
 
@@ -76,7 +77,7 @@
 
 (defmethod handle-game-event :default
   [room event]
-  (prn "receive not handle event:" event)
+  (log/warn "receive not handle event:" event)
   room)
 
 (defmulti play-action

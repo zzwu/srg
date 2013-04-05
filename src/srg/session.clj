@@ -23,6 +23,12 @@
   ([name]
      (remove-session! sessions name)))
 
+(defn current-username
+  []
+  (let [session (current-options)]
+    (prn session)
+    (:username session)))
+
 (defn send-to-user
   [user message]
   (enqueue (get @sessions user)
