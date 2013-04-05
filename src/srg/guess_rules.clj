@@ -156,28 +156,3 @@
   ([init-room]
      (merge (GuessRoom.) init-room))
   ([] (room-constructor init-room)))
-
-(def actions
-  [{:action :start-game, :players [{:player-id "zzwu"} {:player-id "cdf"}] :game-id "kkk"}
-   {:action :guess :kind 1}
-   {:action :guess :kind 1}
-   {:action :guess :kind 2}
-   {:action :guess :kind 2}
-   {:action :guess :kind 3}
-   {:action :guess :kind 1}])
-
-(defn test-game-events
-  [room actions]
-  (loop [r room
-         left actions
-         events []]
-    (if-not (seq left)
-      (do
-        (doseq [e events]
-          (prn e))
-        r)
-      (let [curr-events (p/play r (first left))
-            next-room (reduce p/update r curr-events)]
-        (recur next-room
-               (rest left)
-               (into events curr-events))))))
