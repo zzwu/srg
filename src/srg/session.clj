@@ -11,8 +11,17 @@
     (.set local-options (assoc session :username username))))
 
 (defn add-session!
-  [sessions name channel]
-  (assoc sessions name channel))
+  ([sessions name channel]
+     (update-session-user! name)
+     (swap! sessions assoc name channel))
+  ([name channel]
+     (add-session! sessions name channel)))
+
+(defn remove-session!
+  ([sessions name]
+     (swap! sessions dissoc name))
+  ([name]
+     (remove-session! sessions name)))
 
 (defn send-to-user
   [user message]

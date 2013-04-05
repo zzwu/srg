@@ -28,8 +28,8 @@
     (case header
       "add" (add items ch)
       "login" (login/logon items ch)
-      "hello" (enqueue ch (login/hello))
-      "hello-to" (login/hello-to items)
+      "hello" (login/hello)
+      "chat-to" (login/chat-to items)
       "queue" (game/queue-for-game items)
       "play-game" (game/play-game items)
       (log/warn :invalied-message msg))))

@@ -1,24 +1,28 @@
 (ns srg.login
   (:use [aleph.netty core]
         [lamina.core]
-        [srg.utils]
-        [srg.session])
-  (:require [clojure.tools.logging :as log]))
+        [srg.utils])
+  (:require [clojure.tools.logging :as log]
+            [srg.session :as session]))
 
 (defhandler logon [items ch] [:string username :string password]
-  (update-session-user! username)
-  (swap! sessions add-session! username ch)
+  (session/add-session! username ch)
   (enqueue ch (gen-msg "welcome" username)))
 
 (defn hello
   []
-  (let [session (current-options)]
-    (gen-msg "<s-hello>" (:username session))))
+  (let [session (current-options)
+        username (:username session)]
+    (session/send-to-user username
+                          (gen-msg "hello" (:username session)))))
 
-(defhandler hello-to [items] [:string to-user]
-  (enqueue (get @sessions to-user)
-           (gen-msg "<s-hello>" "from" (:username (current-options)))))
+(defhandler chat-to [items] [:string to-user :string content]
+  (session/send-to-user to-user
+                        (gen-msg "chat-msg" (:username (current-options)) content)))
 
 (defhandler logout [items] [:string username]
-  (log/warn :logout username))
+  (log/info :logout username)
+  (session/remove-session! username)
+  ;;TODO close channel
+  )
 
