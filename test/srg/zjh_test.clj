@@ -114,3 +114,50 @@
                       :max-bid 100, :max-player-count 6, :min-add 10, :pot 0,
                       :seats {0 {:player-id "zzwu", :player-info {:bank 140}, :seat-no 0, :state :init}, 1 {:player-id "cdf", :player-info {:bank 60}, :seat-no 1, :state :init}}}))
 
+
+(facts "seats-no-cycle test"
+       (first (seats-no-cycle 3 [0 1 2 3 4 5])) => 4
+       (first (seats-no-cycle 0 [3 4 5 0 1 2])) => 1
+       (first (seats-no-cycle 4 [3 4 5 0 1 2])) => 5
+       (first (seats-no-cycle 5 [0 1 2 3 4 5])) => 0)
+
+(facts "start-game test"
+       (let [actions [{:game-action :join-room :seat-no 0 :player-id "zzwu" :player-info {:bank 1000}}
+                      {:game-action :join-room :seat-no 1 :player-id "ddy" :player-info {:bank 1000}}
+                      {:game-action :join-room :seat-no 2 :player-id "cdf" :player-info {:bank 1000}}
+                      {:game-action :ready :seat-no 0}
+                      {:game-action :ready :seat-no 1}
+                      {:game-action :ready :seat-no 2}
+                      {:game-action :start :seed 2}]
+             [room events]
+             (loop [as actions
+                    es []
+                    r (room-constructor)]
+               (if (seq as)
+                 (let [curr-events (play-action r (first as))
+                       _ (prn curr-events)
+                       new-room (reduce handle-game-event r curr-events)
+                       _ (prn new-room)]
+                   (recur (rest as) (into es curr-events) new-room))
+                 [r es]))]
+         (into {} room) => {:base 10,
+                            :dealer 1,
+                            :history-bids [],
+                            :last-bid 10,
+                            :max-bid 100,
+                            :max-player-count 6,
+                            :min-add 10, :pot 0,
+                            :seats {0 {:cards [{:rank 4, :suit :spades} {:rank 13, :suit :hearts} {:rank 10, :suit :diamonds}], :player-id "zzwu" :player-info {:bank 1000}, :seat-no 0, :state :in},
+                                    1 {:cards [{:rank 4, :suit :clubs} {:rank 9, :suit :spades} {:rank 10, :suit :hearts}], :player-id "ddy" :player-info {:bank 1000}, :seat-no 1, :state :in},
+                                    2 {:cards [{:rank 8, :suit :diamonds} {:rank 13, :suit :spades} {:rank 14, :suit :clubs}], :player-id "cdf" :player-info {:bank 1000}, :seat-no 2, :state :in}}}
+         events => [{:game-event :join-room, :player-id "zzwu", :player-info {:bank 1000}, :seat-no 0}
+                    {:game-event :join-room, :player-id "ddy", :player-info {:bank 1000}, :seat-no 1}
+                    {:game-event :join-room, :player-id "cdf", :player-info {:bank 1000}, :seat-no 2}
+                    {:game-event :ready, :seat-no 0}
+                    {:game-event :ready, :seat-no 1}
+                    {:game-event :ready, :seat-no 2}
+                    {:game-event :start-game, :into-game-seats [2 1 0]}
+                    {:dealer 1, :game-event :dealer}
+                    {:cards [{:rank 8, :suit :diamonds} {:rank 13, :suit :spades} {:rank 14, :suit :clubs}], :game-event :deal-cards-to-player, :seat-no 2}
+                    {:cards [{:rank 4, :suit :clubs} {:rank 9, :suit :spades} {:rank 10, :suit :hearts}], :game-event :deal-cards-to-player, :seat-no 1}
+                    {:cards [{:rank 4, :suit :spades} {:rank 13, :suit :hearts} {:rank 10, :suit :diamonds}], :game-event :deal-cards-to-player, :seat-no 0}]))

@@ -7,6 +7,26 @@
 ;;(2 3 4 5 6 7 8 9 10 J Q K A)
 (def ranks (reverse (range 2 15)))
 
+(defn shuffle-random
+  "Return a random permutation of coll"
+  [^java.util.Collection coll seed]
+  (let [al (java.util.ArrayList. coll)]
+    (java.util.Collections/shuffle al (java.util.Random. seed))
+    (clojure.lang.RT/vector (.toArray al))))
+
+(defn card [rank suit]
+  {:rank rank :suit suit})
+
+(def all-cards
+  (for [suit suits
+        rank ranks]
+    (card rank suit)))
+
+(defn obscure-card [card]
+  (-> card
+      (dissoc :rank :suit)
+      (assoc :facedown true :id (str (gensym)))))
+
 ;;一副牌
 (def pokers
   (into [{:suit :king :rank 16} {:suit :king :rank 17}]

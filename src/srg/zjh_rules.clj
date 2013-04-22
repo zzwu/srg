@@ -1,7 +1,8 @@
 (ns srg.zjh-rules
   (:use [srg.utils])
   (:require [srg.protocols :as p]
-            [clojure.tools.logging :as log]))
+            [clojure.tools.logging :as log]
+            [srg.cards :as cards]))
 
 
 (def init-room
@@ -90,19 +91,69 @@
       cleat-seats-last-game-info))
 
 (defmulti play-action
-  (fn [room action] (:action action)))
+  (fn [room action] (:game-action action)))
 
 (defmethod play-action :join-room
-  [room action])
+  [room action]
+  [(merge {:game-event :join-room} (select-keys action [:seat-no :player-id :player-info]))])
 
 (defmethod play-action :ready
-  [room action])
+  [room action]
+  [(merge {:game-event :ready} (select-keys action [:seat-no]))])
+
+(defn start-game
+  [room]
+  (let [into-game-seats (keep (fn [[seat-no player]]
+                                (if (= :ready (:state player))
+                                  seat-no)) (:seats room))]
+    [{:game-event :start-game :into-game-seats (vec into-game-seats)}]))
+
+(defn seats-no-cycle
+  [from-no seats-no]
+  (let [seats (sort seats-no)
+        larger-seats (filter #(> % from-no) seats)
+        smaller-seats (filter #(<= % from-no) seats)
+        new-seats (into (vec larger-seats) smaller-seats)]
+    (cycle new-seats)))
+
+(defn in-game?
+  [room seat-no]
+  (= :in (get-in room [:seats seat-no :state])))
+
+(defn dealer-index
+  [room]
+  (let [from-no (or (:dealer room) 0)
+        seats-no (keys (:seats room))]
+    (assert ((apply hash-set seats-no) from-no))
+    (first
+     (filter
+      (partial in-game? room)
+      ;;take 12 to avoid endless loop
+      (take 12 (seats-no-cycle from-no seats-no))))))
+
+(defn dealer
+  [room]
+  [{:game-event :dealer
+    :dealer (dealer-index room)}])
+
+(defn deal-cards-to-player
+  [room seed]
+  (let [deck (cards/shuffle-random cards/all-cards seed)]
+    (map (fn [seat-no cards]
+           {:game-event :deal-cards-to-player :seat-no seat-no :cards (into [] cards)})
+         (filter (partial in-game? room) (keys (:seats room)))
+         (partition 3 deck))))
 
 (defmethod play-action :start
-  [room action])
+  [room {:keys [seed]}]
+  (chain-rules room
+               start-game
+               dealer
+               #(deal-cards-to-player % seed)))
 
 (defmethod play-action :bid
-  [room action])
+  [room action]
+  )
 
 (defmethod play-action :reverse
   [room action])
