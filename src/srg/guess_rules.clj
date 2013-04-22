@@ -1,20 +1,9 @@
 (ns srg.guess-rules
+  (:use [srg.utils])
   (:require [srg.protocols :as p]
             [clojure.tools.logging :as log]))
 
 (def kinds {1 :rock 2 :scissors 3 :paper})
-
-(defn chain-rules
-  [room & rule-fns]
-  (loop [room-state room
-         fs rule-fns
-         output nil]
-    (if (seq fs)
-      (let [f (first fs)
-            messages (flatten (f room-state))
-            new-room-state (reduce p/update room-state messages)]
-        (recur new-room-state (rest fs) (concat output messages)))
-      output)))
 
 (def init-room
   {:round 1

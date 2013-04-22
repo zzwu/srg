@@ -2,5 +2,3 @@
   (:use ))
 
 (def msg "login#zzwu#zzwu")
-
-()

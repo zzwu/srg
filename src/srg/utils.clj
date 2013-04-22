@@ -1,5 +1,6 @@
 (ns srg.utils
-  (:require [clojure.tools.logging :as log]))
+  (:require [clojure.tools.logging :as log]
+            [srg.protocols :as p]))
 
 (defn to-int
   [s]
@@ -58,4 +59,16 @@
                                                           (let [type-items# (to-type-items ~types items#)
                                                                 map-items# (map vector ~symbol-keywrods type-items#)]
                                                             (into {:action (keyword :guess)} map-items#)))))))
+
+(defn chain-rules
+  [room & rule-fns]
+  (loop [room-state room
+         fs rule-fns
+         output nil]
+    (if (seq fs)
+      (let [f (first fs)
+            messages (flatten (f room-state))
+            new-room-state (reduce p/update room-state messages)]
+        (recur new-room-state (rest fs) (concat output messages)))
+      output)))
 
