@@ -175,7 +175,7 @@
        (enable-bids 50 true 80 [10 20 50 100]) => (list))
 
 
-(facts "start-game test"
+(facts "win without pk test"
        (let [actions [{:game-action :join-room :seat-no 0 :player-id "zzwu" :player-info {:bank 1000}}
                       {:game-action :join-room :seat-no 1 :player-id "ddy" :player-info {:bank 1000}}
                       {:game-action :join-room :seat-no 2 :player-id "cdf" :player-info {:bank 1000}}
@@ -197,23 +197,16 @@
                     r (room-constructor)]
                (if (seq as)
                  (let [curr-events (play-action r (first as))
-                       ;_ (prn curr-events)
-                       new-room (reduce handle-game-event r curr-events)
-                       ;_ (prn new-room)
-                       ]
+                       new-room (reduce handle-game-event r curr-events)]
                    (recur (rest as) (into es curr-events) new-room))
                  [r es]))]
          (into {} room) => {:base 10,
-                            :dealer 1,
-                            :history-bids [],
-                            :last-bid 10,
-                            :max-bid 100,
-                            :max-player-count 6,
-                            :min-add 10, :pot 0,
-                            :current-player {:current-index 2, :enable-actions {:bid (list 10 20 50), :fold true, :reverse true}},
-                            :seats {0 {:cards [{:rank 4, :suit :spades} {:rank 13, :suit :hearts} {:rank 10, :suit :diamonds}], :player-id "zzwu" :player-info {:bank 1000}, :seat-no 0, :state :in},
-                                    1 {:cards [{:rank 4, :suit :clubs} {:rank 9, :suit :spades} {:rank 10, :suit :hearts}], :player-id "ddy" :player-info {:bank 1000}, :seat-no 1, :state :in},
-                                    2 {:cards [{:rank 8, :suit :diamonds} {:rank 13, :suit :spades} {:rank 14, :suit :clubs}], :player-id "cdf" :player-info {:bank 1000}, :seat-no 2, :state :in}}}
+                            :current-player {:current-index 0, :enable-actions {:bid (list 100), :fold true, :reverse false}},
+                            :dealer 1, :history-bids [], :last-bid 10, :max-bid 100,
+                            :max-player-count 6, :min-add 10, :pot 0,
+                            :seats {0 {:player-id "zzwu", :player-info {:bank 940}, :seat-no 0, :state :init},
+                                    1 {:player-id "ddy", :player-info {:bank 1070}, :seat-no 1, :state :init},
+                                    2 {:player-id "cdf", :player-info {:bank 990}, :seat-no 2, :state :init}}}
          events => [{:game-event :join-room, :player-id "zzwu", :player-info {:bank 1000}, :seat-no 0}
                     {:game-event :join-room, :player-id "ddy", :player-info {:bank 1000}, :seat-no 1}
                     {:game-event :join-room, :player-id "cdf", :player-info {:bank 1000}, :seat-no 2}
@@ -225,4 +218,21 @@
                     {:cards [{:rank 8, :suit :diamonds} {:rank 13, :suit :spades} {:rank 14, :suit :clubs}], :game-event :deal-cards-to-player, :seat-no 2}
                     {:cards [{:rank 4, :suit :clubs} {:rank 9, :suit :spades} {:rank 10, :suit :hearts}], :game-event :deal-cards-to-player, :seat-no 1}
                     {:cards [{:rank 4, :suit :spades} {:rank 13, :suit :hearts} {:rank 10, :suit :diamonds}], :game-event :deal-cards-to-player, :seat-no 0}
-                    {:enable-actions {:bid (list 10 20 50), :fold true, :reverse true}, :game-event :current-player, :seat-no 2}]))
+                    {:enable-actions {:bid (list 10 20 50), :fold true, :reverse true}, :game-event :current-player, :seat-no 2}
+                    {:amount 10, :game-event :bid, :seat-no 2}
+                    {:enable-actions {:bid (list 10 20 50), :fold true, :reverse true}, :game-event :current-player, :seat-no 0}
+                    {:amount 10, :game-event :bid, :seat-no 0}
+                    {:enable-actions {:bid (list 10 20 50), :fold true, :reverse true}, :game-event :current-player, :seat-no 1}
+                    {:amount 20, :game-event :bid, :seat-no 1}
+                    {:enable-actions {:bid (list 20 50), :fold true, :reverse true}, :game-event :current-player, :seat-no 2}
+                    {:cards [{:rank 8, :suit :diamonds} {:rank 13, :suit :spades} {:rank 14, :suit :clubs}], :game-event :reverse, :seat-no 2}
+                    {:game-event :fold, :seat-no 2}
+                    {:enable-actions {:bid (list 20 50), :fold true, :reverse true}, :game-event :current-player, :seat-no 0}
+                    {:cards [{:rank 4, :suit :spades} {:rank 13, :suit :hearts} {:rank 10, :suit :diamonds}], :game-event :reverse, :seat-no 0}
+                    {:amount 50, :game-event :bid, :seat-no 0}
+                    {:enable-actions {:bid (list 20 50), :fold true, :reverse true}, :game-event :current-player, :seat-no 1}
+                    {:amount 50, :game-event :bid, :seat-no 1}
+                    {:enable-actions {:bid (list 100), :fold true, :reverse false}, :game-event :current-player, :seat-no 0}
+                    {:game-event :fold, :seat-no 0}
+                    {:amount 140, :game-event :winner, :seat-no 1}
+                    {:game-event :game-over}]))

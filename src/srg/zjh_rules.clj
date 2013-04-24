@@ -204,6 +204,23 @@
   [room amount]
   [{:game-event :bid :seat-no ((comp :current-index :current-player) room) :amount amount}])
 
+(defn get-winner-seat-no
+  [room]
+  (let [left (filter (partial in-game? room) (keys (:seats room)))]
+    (if (= 1 (count left))
+      (first left))))
+
+(defn winner-message
+  [winner-no win-amount]
+  [{:game-event :winner :seat-no winner-no :amount win-amount}
+   {:game-event :game-over}])
+
+(defn game-over-or-next-player
+  [room]
+  (if-let [winner-no (get-winner-seat-no room)]
+    (winner-message winner-no (:pot room))
+    (next-player room)))
+
 (defmethod play-action :bid
   [room {:keys [amount]}]
   (chain-rules room
@@ -228,7 +245,7 @@
   [room action]
   (chain-rules room
                fold-event
-               next-player))
+               game-over-or-next-player))
 
 (defmethod play-action :pk
   [room action])
