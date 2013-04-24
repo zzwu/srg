@@ -44,6 +44,11 @@
   [room {:keys [seat-no cards]}]
   (assoc-in room [:seats seat-no :cards] cards))
 
+(defmethod handle-game-event :current-player
+  [room {:keys [seat-no enable-actions]}]
+  (-> room
+      (assoc :current-player {:current-index seat-no :enable-actions enable-actions})))
+
 (defmethod handle-game-event :reverse
   [room {:keys [seat-no cards]}]
   (-> room
@@ -65,6 +70,7 @@
   room)
 
 (defmethod handle-game-event :pk-result
+  
   [room {:keys [loser-no winner-no]}]
   (assoc-in room [:seats loser-no :state] :out))
 
@@ -149,11 +155,43 @@
   (chain-rules room
                start-game
                dealer
-               #(deal-cards-to-player % seed)))
+               #(deal-cards-to-player % seed)
+               next-player))
+
+(defn next-index
+  ([last seats-no]
+     (let [orders (seats-no-cycle last seats-no)]
+       (first orders)))
+  ([room]
+     (let [in-seats-no (filter (partial in-game? room) (keys (:seats room)))
+           current-index (or ((comp :current-player :current-index) room) (:dealer room))]
+       (next-index current-index in-seats-no))))
+
+(def actions #{:fold :bid :reverse})
+
+(def bid-options [10 20 50 100])
+
+(defn enable-bids
+  [last-bid reverse? bank bid-options]
+  (filter #(>= bank %)
+          (if reverse?
+            (rest (filter #(>= % last-bid) bid-options))
+            (filter #(>= % last-bid) (pop bid-options)))))
+
+(defn next-player
+  [room]
+  (let [current-index ((comp :current-player :current-index) room)
+        last-bid (:last-bid room)
+        next-player-index (next-index room)
+        reverse? (get-in room [:seats next-player-index :reverse])
+        bank (get-in room [:seats next-player-index :player-info :bank])
+        bids (enable-bids last-bid reverse? bank bid-options)]
+    [{:game-event :current-player
+      :seat-no next-player-index
+      :enable-actions {:fold true :bid bids :reverse (not reverse?)}}]))
 
 (defmethod play-action :bid
-  [room action]
-  )
+  [room action])
 
 (defmethod play-action :reverse
   [room action])
