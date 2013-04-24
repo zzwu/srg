@@ -16,6 +16,8 @@
    :pot 0
    :max-player-count 6})
 
+(def bid-options [10 20 50 100])
+
 (defmulti handle-game-event
   (fn [room event] (:game-event event)))
 
@@ -55,6 +57,12 @@
       (assoc-in [:seats seat-no :reverse] true)
       (assoc-in [:seats seat-no :cards] cards)))
 
+(defn true-bid
+  [reverse? amount bid-options]
+  (if reverse?
+    (last (filter #(< % amount) bid-options))
+    amount))
+
 (defmethod handle-game-event :bid
   [room {:keys [seat-no amount]}]
   {:pre [(>= amount (:last-bid room))]}
@@ -63,7 +71,11 @@
       (update-in [:pot] + amount)
       (update-in [:seats seat-no :amount] (fnil + 0) amount)
       (update-in [:history-bids] conj {:seat-no seat-no :amount amount})
-      (assoc :last-bid amount)))
+      (assoc :last-bid (true-bid (get-in room [:seats seat-no :reverse]) amount bid-options))))
+
+(defmethod handle-game-event :fold
+  [room {:keys [seat-no]}]
+  (assoc-in room [:seats seat-no :state] :out))
 
 (defmethod handle-game-event :pk
   [room event]
@@ -164,12 +176,10 @@
        (first orders)))
   ([room]
      (let [in-seats-no (filter (partial in-game? room) (keys (:seats room)))
-           current-index (or ((comp :current-player :current-index) room) (:dealer room))]
+           current-index (or ((comp :current-index :current-player) room) (:dealer room))]
        (next-index current-index in-seats-no))))
 
 (def actions #{:fold :bid :reverse})
-
-(def bid-options [10 20 50 100])
 
 (defn enable-bids
   [last-bid reverse? bank bid-options]
@@ -190,11 +200,35 @@
       :seat-no next-player-index
       :enable-actions {:fold true :bid bids :reverse (not reverse?)}}]))
 
+(defn bid-event
+  [room amount]
+  [{:game-event :bid :seat-no ((comp :current-index :current-player) room) :amount amount}])
+
 (defmethod play-action :bid
-  [room action])
+  [room {:keys [amount]}]
+  (chain-rules room
+               #(bid-event % amount)
+               next-player))
+
+(defn current-seat-no
+  [room]
+  ((comp :current-index :current-player) room))
 
 (defmethod play-action :reverse
-  [room action])
+  [room action]
+  (let [seat-no (current-seat-no room)]
+    [{:game-event :reverse :seat-no seat-no :cards (get-in room [:seats seat-no :cards])}]))
+
+(defn fold-event
+  [room]
+  (let [seat-no (current-seat-no room)]
+    [{:game-event :fold :seat-no seat-no}]))
+
+(defmethod play-action :fold
+  [room action]
+  (chain-rules room
+               fold-event
+               next-player))
 
 (defmethod play-action :pk
   [room action])

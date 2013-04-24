@@ -173,3 +173,56 @@
        (enable-bids 50 false 100 [10 20 50 100]) => (list 50)
        (enable-bids 50 true 100 [10 20 50 100]) => (list 100)
        (enable-bids 50 true 80 [10 20 50 100]) => (list))
+
+
+(facts "start-game test"
+       (let [actions [{:game-action :join-room :seat-no 0 :player-id "zzwu" :player-info {:bank 1000}}
+                      {:game-action :join-room :seat-no 1 :player-id "ddy" :player-info {:bank 1000}}
+                      {:game-action :join-room :seat-no 2 :player-id "cdf" :player-info {:bank 1000}}
+                      {:game-action :ready :seat-no 0}
+                      {:game-action :ready :seat-no 1}
+                      {:game-action :ready :seat-no 2}
+                      {:game-action :start :seed 2}
+                      {:game-action :bid :amount 10 :player-id "cdf"}
+                      {:game-action :bid :amount 10 :player-id "zzwu"}
+                      {:game-action :bid :amount 20 :player-id "ddy"}
+                      {:game-action :reverse :player-id "cdf"} {:game-action :fold :player-id "cdf"}
+                      {:game-action :reverse :player-id "zzwu"} {:game-action :bid :amount 50 :player-id "zzwu"}
+                      {:game-action :bid :player-id "ddy" :amount 50}
+                      {:game-action :fold :player-id "zzwu"}
+                      ]
+             [room events]
+             (loop [as actions
+                    es []
+                    r (room-constructor)]
+               (if (seq as)
+                 (let [curr-events (play-action r (first as))
+                       ;_ (prn curr-events)
+                       new-room (reduce handle-game-event r curr-events)
+                       ;_ (prn new-room)
+                       ]
+                   (recur (rest as) (into es curr-events) new-room))
+                 [r es]))]
+         (into {} room) => {:base 10,
+                            :dealer 1,
+                            :history-bids [],
+                            :last-bid 10,
+                            :max-bid 100,
+                            :max-player-count 6,
+                            :min-add 10, :pot 0,
+                            :current-player {:current-index 2, :enable-actions {:bid (list 10 20 50), :fold true, :reverse true}},
+                            :seats {0 {:cards [{:rank 4, :suit :spades} {:rank 13, :suit :hearts} {:rank 10, :suit :diamonds}], :player-id "zzwu" :player-info {:bank 1000}, :seat-no 0, :state :in},
+                                    1 {:cards [{:rank 4, :suit :clubs} {:rank 9, :suit :spades} {:rank 10, :suit :hearts}], :player-id "ddy" :player-info {:bank 1000}, :seat-no 1, :state :in},
+                                    2 {:cards [{:rank 8, :suit :diamonds} {:rank 13, :suit :spades} {:rank 14, :suit :clubs}], :player-id "cdf" :player-info {:bank 1000}, :seat-no 2, :state :in}}}
+         events => [{:game-event :join-room, :player-id "zzwu", :player-info {:bank 1000}, :seat-no 0}
+                    {:game-event :join-room, :player-id "ddy", :player-info {:bank 1000}, :seat-no 1}
+                    {:game-event :join-room, :player-id "cdf", :player-info {:bank 1000}, :seat-no 2}
+                    {:game-event :ready, :seat-no 0}
+                    {:game-event :ready, :seat-no 1}
+                    {:game-event :ready, :seat-no 2}
+                    {:game-event :start-game, :into-game-seats [2 1 0]}
+                    {:dealer 1, :game-event :dealer}
+                    {:cards [{:rank 8, :suit :diamonds} {:rank 13, :suit :spades} {:rank 14, :suit :clubs}], :game-event :deal-cards-to-player, :seat-no 2}
+                    {:cards [{:rank 4, :suit :clubs} {:rank 9, :suit :spades} {:rank 10, :suit :hearts}], :game-event :deal-cards-to-player, :seat-no 1}
+                    {:cards [{:rank 4, :suit :spades} {:rank 13, :suit :hearts} {:rank 10, :suit :diamonds}], :game-event :deal-cards-to-player, :seat-no 0}
+                    {:enable-actions {:bid (list 10 20 50), :fold true, :reverse true}, :game-event :current-player, :seat-no 2}]))
