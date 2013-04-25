@@ -7,4 +7,5 @@
                  [aleph "0.3.0-beta7"]
                  [org.clojure/tools.logging "0.2.6"]
                  [log4j "1.2.16"]
-                 [midje "1.5.1"]])
+                 [midje "1.5.1"]
+                 [org.clojure/data.json "0.2.2"]])

@@ -165,14 +165,6 @@
          (filter (partial in-game? room) (keys (:seats room)))
          (partition 3 deck))))
 
-(defmethod play-action :start
-  [room {:keys [seed]}]
-  (chain-rules room
-               start-game
-               dealer
-               #(deal-cards-to-player % seed)
-               next-player))
-
 (defn next-index
   ([last seats-no]
      (let [orders (seats-no-cycle last seats-no)]
@@ -181,8 +173,6 @@
      (let [in-seats-no (filter (partial in-game? room) (keys (:seats room)))
            current-index (or ((comp :current-index :current-player) room) (:dealer room))]
        (next-index current-index in-seats-no))))
-
-(def actions #{:fold :bid :reverse})
 
 (defn enable-bids
   [last-bid reverse? bank bid-options]
@@ -202,6 +192,16 @@
     [{:game-event :current-player
       :seat-no next-player-index
       :enable-actions {:fold true :bid bids :reverse (not reverse?)}}]))
+
+(defmethod play-action :start
+  [room {:keys [seed]}]
+  (chain-rules room
+               start-game
+               dealer
+               #(deal-cards-to-player % seed)
+               next-player))
+
+(def actions #{:fold :bid :reverse})
 
 (defn bid-event
   [room amount]
