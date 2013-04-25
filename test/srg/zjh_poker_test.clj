@@ -36,4 +36,4 @@
        (pk [{:rank 5, :suit :spades} {:rank 5, :suit :diamonds} {:rank 5, :suit :hearts}] [{:rank 5, :suit :spades} {:rank 2, :suit :diamonds} {:rank 3, :suit :hearts}]) => :lose
        (pk [{:rank 5, :suit :spades} {:rank 4, :suit :diamonds} {:rank 3, :suit :hearts}] [{:rank 5, :suit :spades} {:rank 5, :suit :diamonds} {:rank 5, :suit :hearts}]) => :lose
        (pk [{:rank 5, :suit :spades} {:rank 4, :suit :spades} {:rank 3, :suit :spades}] [{:rank 5, :suit :spades} {:rank 5, :suit :diamonds} {:rank 5, :suit :hearts}]) => :lose
-       (pk [{:rank 5, :suit :spades} {:rank 4, :suit :diamonds} {:rank 3, :suit :hearts}] [{:rank 5, :suit :diamonds} {:rank 3, :suit :diamonds} {:rank 4, :suit :hearts}]) => :draw)
+       (pk [{:rank 5, :suit :spades} {:rank 4, :suit :diamonds} {:rank 3, :suit :hearts}] [{:rank 5, :suit :diamonds} {:rank 3, :suit :diamonds} {:rank 4, :suit :hearts}]) => :lose)

@@ -99,6 +99,6 @@
                right-cards-score (:score (first (match right-cards)))]
            (cond
             (> left-cards-score right-cards-score) :win
-            (< left-cards-score right-cards-score) :lose
-            (= left-cards-score right-cards-score) :draw))))
+            ;;平牌比牌的输
+            (<= left-cards-score right-cards-score) :lose))))
 
