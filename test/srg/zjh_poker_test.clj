@@ -31,9 +31,9 @@
        (match [{:rank 3, :suit :spades} {:rank 5, :suit :spades} {:rank 4, :suit :spades}]) => (list {:cards [{:rank 5, :suit :spades} {:rank 4, :suit :spades} {:rank 3, :suit :spades}], :pattern :straight-flush, :score 18063} {:cards [{:rank 5, :suit :spades} {:rank 4, :suit :spades} {:rank 3, :suit :spades}], :pattern :flush, :score 14688} {:cards [{:rank 5, :suit :spades} {:rank 4, :suit :spades} {:rank 3, :suit :spades}], :pattern :straight, :score 11313} {:cards [{:rank 5, :suit :spades} {:rank 4, :suit :spades} {:rank 3, :suit :spades}], :pattern :high-card, :score 4563}))
 
 
-(facts "test pk"
-       (pk [{:rank 5, :suit :spades} {:rank 2, :suit :diamonds} {:rank 3, :suit :hearts}] [{:rank 5, :suit :spades} {:rank 5, :suit :diamonds} {:rank 5, :suit :hearts}]) => :win
-       (pk [{:rank 5, :suit :spades} {:rank 5, :suit :diamonds} {:rank 5, :suit :hearts}] [{:rank 5, :suit :spades} {:rank 2, :suit :diamonds} {:rank 3, :suit :hearts}]) => :lose
-       (pk [{:rank 5, :suit :spades} {:rank 4, :suit :diamonds} {:rank 3, :suit :hearts}] [{:rank 5, :suit :spades} {:rank 5, :suit :diamonds} {:rank 5, :suit :hearts}]) => :lose
-       (pk [{:rank 5, :suit :spades} {:rank 4, :suit :spades} {:rank 3, :suit :spades}] [{:rank 5, :suit :spades} {:rank 5, :suit :diamonds} {:rank 5, :suit :hearts}]) => :lose
-       (pk [{:rank 5, :suit :spades} {:rank 4, :suit :diamonds} {:rank 3, :suit :hearts}] [{:rank 5, :suit :diamonds} {:rank 3, :suit :diamonds} {:rank 4, :suit :hearts}]) => :lose)
+(facts "test win?"
+       (win? [{:rank 5, :suit :spades} {:rank 2, :suit :diamonds} {:rank 3, :suit :hearts}] [{:rank 5, :suit :spades} {:rank 5, :suit :diamonds} {:rank 5, :suit :hearts}]) => true
+       (win? [{:rank 5, :suit :spades} {:rank 5, :suit :diamonds} {:rank 5, :suit :hearts}] [{:rank 5, :suit :spades} {:rank 2, :suit :diamonds} {:rank 3, :suit :hearts}]) => false
+       (win? [{:rank 5, :suit :spades} {:rank 4, :suit :diamonds} {:rank 3, :suit :hearts}] [{:rank 5, :suit :spades} {:rank 5, :suit :diamonds} {:rank 5, :suit :hearts}]) => false
+       (win? [{:rank 5, :suit :spades} {:rank 4, :suit :spades} {:rank 3, :suit :spades}] [{:rank 5, :suit :spades} {:rank 5, :suit :diamonds} {:rank 5, :suit :hearts}]) => false
+       (win? [{:rank 5, :suit :spades} {:rank 4, :suit :diamonds} {:rank 3, :suit :hearts}] [{:rank 5, :suit :diamonds} {:rank 3, :suit :diamonds} {:rank 4, :suit :hearts}]) => false)

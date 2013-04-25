@@ -2,7 +2,8 @@
   (:use [srg.utils])
   (:require [srg.protocols :as p]
             [clojure.tools.logging :as log]
-            [srg.cards :as cards]))
+            [srg.cards :as cards]
+            [srg.zjh-poker :as poker]))
 
 
 (def init-room
@@ -64,14 +65,17 @@
     amount))
 
 (defmethod handle-game-event :bid
-  [room {:keys [seat-no amount]}]
+  [room {:keys [seat-no amount pk?]}]
   {:pre [(>= amount (:last-bid room))]}
   (-> room
       (update-in [:seats seat-no :player-info :bank] - amount)
       (update-in [:pot] + amount)
       (update-in [:seats seat-no :amount] (fnil + 0) amount)
       (update-in [:history-bids] conj {:seat-no seat-no :amount amount})
-      (assoc :last-bid (true-bid (get-in room [:seats seat-no :reverse]) amount bid-options))))
+      (assoc :last-bid
+        (if pk?
+          (:last-bid room)
+          (true-bid (get-in room [:seats seat-no :reverse]) amount bid-options)))))
 
 (defmethod handle-game-event :fold
   [room {:keys [seat-no]}]
@@ -82,7 +86,6 @@
   room)
 
 (defmethod handle-game-event :pk-result
-  
   [room {:keys [loser-no winner-no]}]
   (assoc-in room [:seats loser-no :state] :out))
 
@@ -105,7 +108,7 @@
   [room event]
   (-> room
       (assoc :pot 0 :last-bid 10 :history-bids [])
-      (dissoc :winner)
+      (dissoc :winner :current-player)
       cleat-seats-last-game-info))
 
 (defmulti play-action
@@ -247,8 +250,36 @@
                fold-event
                game-over-or-next-player))
 
+(defn auto-bid-before-pk
+  [room]
+  (let [last-bid (:last-bid room)
+        amount (* 2 (first (-> room :current-player :enable-actions :bid)))]
+    [{:game-event :bid
+      :amount amount
+      :pk true
+      :seat-no (-> room :current-player :current-index)}]))
+
+(defn pk-winner-loser
+  [left-cards left-no right-cards right-no]
+  (if (poker/win? left-cards right-cards)
+    [left-no right-no]
+    [right-no left-no]))
+
+(defn pk-result
+  [room seat-no pk-with-seat-no]
+  (let [left-cards (get-in room [:seats seat-no :cards])
+        right-cards (get-in room [:seats pk-with-seat-no :cards])
+        [winner-no loser-no] (pk-winner-loser left-cards seat-no right-cards pk-with-seat-no)]
+    [{:game-event :pk-result
+      :loser-no loser-no
+      :winner-no winner-no}]))
+
 (defmethod play-action :pk
-  [room action])
+  [room {:keys [pk-with-seat-no]}]
+  (chain-rules room
+               auto-bid-before-pk
+               #(pk-result % (current-seat-no %) pk-with-seat-no)
+               game-over-or-next-player))
 
 (defrecord ZjhRoom []
   p/GameRules

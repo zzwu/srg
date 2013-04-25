@@ -90,15 +90,15 @@
     (and (= #{3 5 2} ranks-set)
          (= 3 (count suit-set)))))
 
-(defn pk
+(defn win?
   [left-cards right-cards]
   (cond
-   (and (diff352? left-cards) (bomb right-cards)) :win
-   (and (bomb left-cards) (diff352? right-cards)) :lose
+   (and (diff352? left-cards) (bomb right-cards)) true
+   (and (bomb left-cards) (diff352? right-cards)) false
    :else (let [left-cards-score (:score (first (match left-cards)))
                right-cards-score (:score (first (match right-cards)))]
            (cond
-            (> left-cards-score right-cards-score) :win
+            (> left-cards-score right-cards-score) true
             ;;平牌比牌的输
-            (<= left-cards-score right-cards-score) :lose))))
+            (<= left-cards-score right-cards-score) false))))
 
