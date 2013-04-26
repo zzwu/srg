@@ -4,57 +4,37 @@
             [srg.action :as actions]
             [srg.protocols :as p]
             [srg.guess-rules :as guess]
+            [srg.zjh-rules :as zjh]
             [clojure.tools.logging :as log]
             [srg.session :as session])
   (:import [java.util UUID]))
-
-(def games (ref {}))
 
 (defn start-game-action
   [type game-id players]
   {:action :start-game :type (keyword type)
    :game-id game-id :players players})
 
-(defn send-to-player
-  [player-name event]
-  (let [message (actions/event-to-message event)]
-    (session/send-to-user player-name message)))
-
-(defn send-to-room
-  [game-inst event]
-  (let [message (actions/event-to-message event)]
-    (log/warn :game-message message)
-    (doseq [player-id (map :player-id (vals (:seats game-inst)))]
-      (session/send-to-user player-id message))))
-
 (defn play-game-action
-  [game-inst action]
+  [game-inst send-message-fn action]
+  (log/warn 'play-game-action :action action :game-inst game-inst)
   (let [events (p/play game-inst action)
         _ (log/info :game-action action :gen-events (into [] events))
         new-game (reduce #(p/update %1 %2) game-inst events)]
+    ;;send message
     (doseq [e events]
-           (send-to-room new-game e))
+      (doseq [player-id (map :player-id (vals (:seats new-game)))]
+        (send-message-fn player-id e)))
     new-game))
 
-(defn start-game!
-  [type players]
-  (let [game-id (str (UUID/randomUUID))
-        new-game-inst-agt (agent (assoc (guess/room-constructor) :id game-id))
-        start-action (start-game-action type game-id (map #(hash-map :player-id %) players))]
-    (dosync
-     (alter games assoc game-id new-game-inst-agt))
-    (log/info :start-a-new-game new-game-inst-agt :current-games @games)
-    (send new-game-inst-agt play-game-action start-action)))
+(defn new-game-agent
+  [id type]
+  (case type
+    :guess (agent (assoc (guess/room-constructor) :id id))
+    :zjh (agent (assoc (zjh/room-constructor) :id id))
+    nil))
 
-(defhandler queue-for-game
-  [items] [:string game-type]
-  (if-let [players (queue/add-queue-player! game-type (session/current-username))]
-    (start-game! game-type players)))
-
-(defn play-game [items]
-  (if-let [action (actions/to-play-action items)]
-    (if-let [game-agt (get @games (:id action))]
-      (do (log/info :play-game @game-agt :action action)
-          (send game-agt play-game-action action))
-      (log/warn :can-not-find-game (:id action)))
-    (log/warn :can-not-parse-action-form-items items)))
+(defn play-game [games action send-message-fn]
+  (if-let [game-agt (get @games (:game-id action))]
+    (do (log/info :play-game @game-agt :action action)
+        (send game-agt play-game-action send-message-fn action))
+    (log/warn :can-not-find-game (:id action))))

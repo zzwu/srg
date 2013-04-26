@@ -31,66 +31,79 @@
   [{:keys [username password]}]
   true)
 
-(defn add-session
-  [sessions name channel]
-  (assoc sessions name channel))
+(defn add-session-fn
+  [sessions-atom]
+  (fn [name channel]
+    (swap! sessions-atom assoc name channel)))
 
-(defn remove-session
-  [sessions name]
-  (dissoc sessions name))
+(defn remove-session-fn
+  [sessions-atom]
+  (fn [name]
+    (swap! sessions-atom dissoc name)))
 
 (defn load-user-info
   [username]
   {:player-id username
    :bank 100000})
 
-(def sessions (atom {}))
+(defn send-message-fn
+  [sessions-atom]
+  (fn [username message]
+    (if-let [channel (get @sessions-atom username)]
+      (do
+        (enqueue channel (json/write-str message))
+        message))))
+
+(defn add-new-game-agent-fn
+  [games]
+  (fn [id type]
+    (let [game-agt (game/new-game-agent id type)]
+      (dosync
+       (alter games assoc id game-agt)))))
 
 (defn handle-message
-  [msg ch]
+  [msg ch sessions games]
   (log/info :received-message msg)
   (let [action (json/read-str msg :value-fn value-readder :key-fn keyword)
-        session-options (current-options)]
+        session-options (current-options)
+        add-session (add-session-fn sessions)
+        remove-session (remove-session-fn sessions)
+        send-message (send-message-fn sessions)]
     (case (:action action)
       :login 
       (if (verify action)
         (let [{:keys [username password]} action]
           (do (.set local-options (assoc session-options :username username))
-              (swap! sessions add-session username ch)
-              (enqueue (get @sessions username)
-                       (json/write-str (assoc (load-user-info username) :message :user-info))))))
+              (add-session username ch)
+              (send-message username (assoc (load-user-info username) :message :user-info)))))
       :chat-to
       (if-let [username (:username session-options)]
         (let [{:keys [chat-to message]} action]
-          (if-let [chat-to-channel (get @sessions chat-to)]
-            (enqueue chat-to-channel (json/write-str {:message :chat-message :from username :text message}))
-            (enqueue ch (json/write-str {:message :warn :msg (str chat-to " is logout.")})))))
+          (if-not (send-message chat-to {:message :chat-message :from username :text message})
+            (send-message username {:message :warn :msg (str chat-to " is logout.")}))))
+      :game-action
+      (if-let [username (:username session-options)]
+        (game/play-game games (assoc action :player-id username) send-message))
       (log/warn :invalied-message msg))))
 
-(defn handle-old-message
-  [msg ch]
-  (log/info :received-message msg)
-  (let [array (into []  (.split msg "\r"))
-        header (first array)
-        items (into [] (rest array))]
-    (case header
-      "add" (add items ch)
-      "login" (login/logon items ch)
-      "hello" (login/hello)
-      "chat-to" (login/chat-to items)
-      "queue" (game/queue-for-game items)
-      "play-game" (game/play-game items)
-      (log/warn :invalied-message msg))))
-
-(defn handler [ch client-info]
-  (log/info :channel ch :class-ch (class ch))
-  (receive-all ch
-               (fn [message]
-                 (handle-message message ch))))
+(defn make-handler
+  [sessions games]
+  (fn [ch client-info]
+    (log/info :channel ch :class-ch (class ch))
+    (receive-all ch
+                 (fn [message]
+                   (handle-message message ch sessions games)))))
 
 (defn start-server
-  ([handler options]
-     (log/info :start-server options :handler handler)
-     (start-tcp-server handler options))
-  ([handler]
-     (start-tcp-server handler default-options)))
+  []
+  (let [sessions (atom {})
+        games (ref {})
+        handler (make-handler sessions games)
+        add-new-game-agent (add-new-game-agent-fn games)]
+    ;;add zjh rooms
+    (doseq [id (range 0 3)]
+      (add-new-game-agent id :zjh))
+    ;;start tcp server
+    {:games games
+     :sessions sessions
+     :server (start-tcp-server handler default-options)}))

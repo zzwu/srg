@@ -281,12 +281,26 @@
                #(pk-result % (current-seat-no %) pk-with-seat-no)
                game-over-or-next-player))
 
+(defn find-seat-no
+  [room player-id]
+  (first
+   (keep (fn [[seat-no player]]
+           (if (= player-id (:player-id player))
+             seat-no)) (:seats room))))
+
+(defn add-seat-no
+  [room action]
+  (if-let [player-id (:player-id action)]
+    (assoc action :seat-no (find-seat-no room player-id))
+    action))
+
 (defrecord ZjhRoom []
   p/GameRules
   (play [this  action]
     (chain-rules this
                  (fn [r]
-                   (play-action r action))))
+                   (play-action r
+                                action))))
   p/GameState
   (update [this game-event]
     (handle-game-event this game-event)))
