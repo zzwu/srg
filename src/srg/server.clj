@@ -83,7 +83,9 @@
             (send-message username {:message :warn :msg (str chat-to " is logout.")}))))
       :game-action
       (if-let [username (:username session-options)]
-        (game/play-game games (assoc action :player-id username) send-message))
+        (game/play-game games
+                        (assoc action :player-id username :player-info (load-user-info username))
+                        send-message))
       (log/warn :invalied-message msg))))
 
 (defn make-handler

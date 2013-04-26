@@ -111,6 +111,14 @@
       (dissoc :winner :current-player)
       cleat-seats-last-game-info))
 
+
+(defn find-seat-no
+  [room player-id]
+  (first
+   (keep (fn [[seat-no player]]
+           (if (= player-id (:player-id player))
+             seat-no)) (:seats room))))
+
 (defmulti play-action
   (fn [room action] (:game-action action)))
 
@@ -120,7 +128,7 @@
 
 (defmethod play-action :ready
   [room action]
-  [(merge {:game-event :ready} (select-keys action [:seat-no]))])
+  [{:game-event :ready :seat-no (find-seat-no room (:player-id action))}])
 
 (defn start-game
   [room]
@@ -280,13 +288,6 @@
                auto-bid-before-pk
                #(pk-result % (current-seat-no %) pk-with-seat-no)
                game-over-or-next-player))
-
-(defn find-seat-no
-  [room player-id]
-  (first
-   (keep (fn [[seat-no player]]
-           (if (= player-id (:player-id player))
-             seat-no)) (:seats room))))
 
 (defn add-seat-no
   [room action]
