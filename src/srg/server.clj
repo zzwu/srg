@@ -61,6 +61,17 @@
       (dosync
        (alter games assoc id game-agt)))))
 
+(defn room-id-and-empty-seat-no
+  [id room]
+  (let [max (:max-player-count room)]
+    (some (fn [seat-no] (if (nil? (get (:seats room) seat-no))
+                          [id seat-no]))
+          (range max))))
+
+(defn find-seat
+  [games]
+  (some (fn [[id room]] (room-id-and-empty-seat-no id @room)) games))
+
 (defn handle-message
   [msg ch sessions games]
   (log/info :received-message msg)
@@ -81,6 +92,10 @@
         (let [{:keys [chat-to message]} action]
           (if-not (send-message chat-to {:message :chat-message :from username :text message})
             (send-message username {:message :warn :msg (str chat-to " is logout.")}))))
+      :find-seat
+      (if-let [username (:username session-options)]
+        (let [[game-id seat-no] (find-seat @games)]
+          (send-message username {:message :find-seat :game-id game-id :seat-no seat-no})))
       :game-action
       (if-let [username (:username session-options)]
         (game/play-game games
