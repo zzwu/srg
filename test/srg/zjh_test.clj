@@ -295,3 +295,5 @@
                     {:game-event :pk-result, :loser-no 1, :winner-no 0}
                     {:amount 340, :game-event :winner, :seat-no 0}
                     {:game-event :game-over}]))
+
+(defn to-json-message [msg] (json/write-str (assoc msg :message :game-event)))
