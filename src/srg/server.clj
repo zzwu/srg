@@ -4,12 +4,14 @@
         [gloss.core]
         [gloss.io]
         [aleph.netty core]
-        [srg.utils])
+        [srg.utils]
+        [srg.system])
   (:require [clojure.tools.logging :as log]
             [srg.login :as login]
             [srg.game :as game]
             [srg.session :as session]
-            [clojure.data.json :as json]))
+            [clojure.data.json :as json]
+            [srg.protocols :as p]))
 
 (def fr
   (finite-frame :int32 (string :utf-8)))
@@ -73,7 +75,7 @@
   (some (fn [[id room]] (room-id-and-empty-seat-no id @room)) games))
 
 (defn handle-message
-  [msg ch sessions games]
+  [msg ch sessions games system]
   (log/info :received-message msg)
   (let [action (json/read-str msg :value-fn value-readder :key-fn keyword)
         session-options (current-options)
@@ -81,6 +83,9 @@
         remove-session (remove-session-fn sessions)
         send-message (send-message-fn sessions)]
     (case (:action action)
+      :register
+      (let [{:keys [username password]} action]
+        (p/register system {:username username :password password}))
       :login 
       (if (verify action)
         (let [{:keys [username password]} action]
@@ -104,18 +109,19 @@
       (log/warn :invalied-message msg))))
 
 (defn make-handler
-  [sessions games]
+  [sessions games system]
   (fn [ch client-info]
     (log/info :channel ch :class-ch (class ch))
     (receive-all ch
                  (fn [message]
-                   (handle-message message ch sessions games)))))
+                   (handle-message message ch sessions games system)))))
 
 (defn start-server
   []
   (let [sessions (atom {})
         games (ref {})
-        handler (make-handler sessions games)
+        system (srg.system.system. "hello")
+        handler (make-handler sessions games system)
         add-new-game-agent (add-new-game-agent-fn games)]
     ;;add zjh rooms
     (doseq [id (range 0 3)]
@@ -123,4 +129,5 @@
     ;;start tcp server
     {:games games
      :sessions sessions
+     :system system
      :server (start-tcp-server handler default-options)}))
