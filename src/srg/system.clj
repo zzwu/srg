@@ -6,5 +6,9 @@
   p/UserDataService
   (register [this user-info]
     (user-data/register user-info))
-  (load-user-info [this username]
-    (user-data/load-user username)))
+  (p/load-user-info [this username]
+    (user-data/load-user username))
+  (p/verify [this username password]
+    (let [info (user-data/load-user username)]
+      (and (= username (:username info))
+           (= password (:password info))))))

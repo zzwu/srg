@@ -9,4 +9,5 @@
 
 (defprotocol UserDataService
   (register [this user-info])
-  (load-user-info [this id]))
+  (load-user-info [this id])
+  (verify [this username password]))

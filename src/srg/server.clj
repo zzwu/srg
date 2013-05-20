@@ -28,8 +28,8 @@
     v))
 
 (defn verify
-  [{:keys [username password]}]
-  true)
+  [system {:keys [username password]}]
+  (p/verify system username password))
 
 (defn add-session-fn
   [sessions-atom]
@@ -42,9 +42,8 @@
     (swap! sessions-atom dissoc name)))
 
 (defn load-user-info
-  [username]
-  {:player-id username
-   :bank 100000})
+  [system username]
+  (p/load-user-info system username))
 
 (defn send-message-fn
   [sessions-atom]
@@ -83,13 +82,13 @@
     (case (:action action)
       :register
       (let [{:keys [username password]} action]
-        (p/register system {:username username :password password}))
+        (p/register system (assoc (select-keys action [:username :password :sex]) :bank 1000 :exp 0)))
       :login 
-      (if (verify action)
+      (if (verify system action)
         (let [{:keys [username password]} action]
           (do (.set local-options (assoc session-options :username username))
               (add-session username ch)
-              (send-message username (assoc (load-user-info username) :message :user-info)))))
+              (send-message username (assoc (load-user-info system username) :message :user-info)))))
       :chat-to
       (if-let [username (:username session-options)]
         (let [{:keys [chat-to message]} action]

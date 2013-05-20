@@ -6,4 +6,4 @@
   (swap! user-infos assoc (:username user-info) user-info))
 
 (defn load-user [username]
-  (get username @user-infos))
+  (get @user-infos username))
