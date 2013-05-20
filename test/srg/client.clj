@@ -7,9 +7,7 @@
         [aleph.netty core]
         [srg.utils])
   (:require [clojure.tools.logging :as log]
-            [srg.login :as login]
             [srg.game :as game]
-            [srg.session :as session]
             [clojure.data.json :as json]))
 
 (def fr

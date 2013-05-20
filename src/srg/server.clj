@@ -7,9 +7,7 @@
         [srg.utils]
         [srg.system])
   (:require [clojure.tools.logging :as log]
-            [srg.login :as login]
             [srg.game :as game]
-            [srg.session :as session]
             [clojure.data.json :as json]
             [srg.protocols :as p]))
 

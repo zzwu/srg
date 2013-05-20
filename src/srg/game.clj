@@ -1,12 +1,9 @@
 (ns srg.game
   (:use [srg.utils :only [gen-msg defhandler]])
-  (:require [srg.queue :as queue]
-            [srg.action :as actions]
-            [srg.protocols :as p]
+  (:require [srg.protocols :as p]
             [srg.guess-rules :as guess]
             [srg.zjh-rules :as zjh]
-            [clojure.tools.logging :as log]
-            [srg.session :as session])
+            [clojure.tools.logging :as log])
   (:import [java.util UUID]))
 
 (defn start-game-action
