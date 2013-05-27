@@ -1,4 +1,5 @@
 (ns srg.zjh-test
+  (:require [clojure.data.json :as json])
   (:use [srg.zjh-rules]
         [midje.sweet]))
 
@@ -125,9 +126,9 @@
        (let [actions [{:game-action :join-room :seat-no 0 :player-id "zzwu" :player-info {:bank 1000}}
                       {:game-action :join-room :seat-no 1 :player-id "ddy" :player-info {:bank 1000}}
                       {:game-action :join-room :seat-no 2 :player-id "cdf" :player-info {:bank 1000}}
-                      {:game-action :ready :seat-no 0}
-                      {:game-action :ready :seat-no 1}
-                      {:game-action :ready :seat-no 2}
+                      {:game-action :ready :player-id "zzwu"}
+                      {:game-action :ready :player-id "ddy"}
+                      {:game-action :ready :player-id "cdf"}
                       {:game-action :start :seed 2}]
              [room events]
              (loop [as actions
@@ -178,9 +179,9 @@
        (let [actions [{:game-action :join-room :seat-no 0 :player-id "zzwu" :player-info {:bank 1000}}
                       {:game-action :join-room :seat-no 1 :player-id "ddy" :player-info {:bank 1000}}
                       {:game-action :join-room :seat-no 2 :player-id "cdf" :player-info {:bank 1000}}
-                      {:game-action :ready :seat-no 0}
-                      {:game-action :ready :seat-no 1}
-                      {:game-action :ready :seat-no 2}
+                      {:game-action :ready :player-id "zzwu"}
+                      {:game-action :ready :player-id "ddy"}
+                      {:game-action :ready :player-id "cdf"}
                       {:game-action :start :seed 2}
                       {:game-action :bid :amount 10 :player-id "cdf"}
                       {:game-action :bid :amount 10 :player-id "zzwu"}
@@ -239,9 +240,9 @@
        (let [actions [{:game-action :join-room :seat-no 0 :player-id "zzwu" :player-info {:bank 1000}}
                       {:game-action :join-room :seat-no 1 :player-id "ddy" :player-info {:bank 1000}}
                       {:game-action :join-room :seat-no 2 :player-id "cdf" :player-info {:bank 1000}}
-                      {:game-action :ready :seat-no 0}
-                      {:game-action :ready :seat-no 1}
-                      {:game-action :ready :seat-no 2}
+                      {:game-action :ready :seat-no 0 :player-id "zzwu"}
+                      {:game-action :ready :seat-no 1 :player-id "ddy"}
+                      {:game-action :ready :seat-no 2 :player-id "cdf"}
                       {:game-action :start :seed 2}
                       {:game-action :bid :amount 10 :player-id "cdf"}
                       {:game-action :bid :amount 10 :player-id "zzwu"}
