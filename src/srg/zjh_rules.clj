@@ -15,6 +15,7 @@
    :last-bid 10
    :history-bids []
    :pot 0
+   :ready-time Long/MAX_VALUE
    :max-player-count 6})
 
 (def bid-options [10 20 50 100])
@@ -28,9 +29,16 @@
   (assoc-in room [:seats seat-no] {:player-info player-info :player-id player-id :seat-no seat-no
                                    :state :init :join-time join-time}))
 
+(defn update-ready-time
+  [room time]
+  (assoc room :ready-time (min (:ready-time room) time)))
+
 (defmethod handle-game-event :ready
-  [room {:keys [seat-no]}]
-  (assoc-in room [:seats seat-no :state] :ready))
+  [room {:keys [seat-no time]}]
+  (-> room
+      (assoc-in [:seats seat-no :state] :ready)
+      (assoc-in [:seats seat-no :ready-time] time)
+      (update-ready-time time)))
 
 (defn make-ready-player-in
   [room seat-no]
@@ -110,6 +118,7 @@
   (-> room
       (assoc :pot 0 :last-bid 10 :history-bids [])
       (dissoc :winner :current-player)
+      (assoc :ready-time Long/MAX_VALUE)
       cleat-seats-last-game-info))
 
 
@@ -129,7 +138,7 @@
 
 (defmethod play-action :ready
   [room action]
-  [{:game-event :ready :seat-no (find-seat-no room (:player-id action))}])
+  [{:game-event :ready :seat-no (find-seat-no room (:player-id action)) :time (:time action)}])
 
 (defn start-game
   [room]
