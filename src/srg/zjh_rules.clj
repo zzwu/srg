@@ -23,9 +23,10 @@
   (fn [room event] (:game-event event)))
 
 (defmethod handle-game-event :join-room
-  [room {:keys [player-id player-info seat-no]}]
+  [room {:keys [player-id player-info seat-no join-time]}]
   {:pre [(<= 0 seat-no (dec (:max-player-count room))) (nil? (get-in room [:seats seat-no]))]}
-  (assoc-in room [:seats seat-no] {:player-info player-info :player-id player-id :seat-no seat-no}))
+  (assoc-in room [:seats seat-no] {:player-info player-info :player-id player-id :seat-no seat-no
+                                   :state :init :join-time join-time}))
 
 (defmethod handle-game-event :ready
   [room {:keys [seat-no]}]
@@ -124,7 +125,7 @@
 
 (defmethod play-action :join-room
   [room action]
-  [(merge {:game-event :join-room} (select-keys action [:seat-no :player-id :player-info]))])
+  [(merge {:game-event :join-room} (select-keys action [:seat-no :player-id :player-info :join-time]))])
 
 (defmethod play-action :ready
   [room action]

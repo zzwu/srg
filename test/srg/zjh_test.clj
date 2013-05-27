@@ -3,11 +3,12 @@
   (:use [srg.zjh-rules]
         [midje.sweet]))
 
-(def join-room-msg {:player-id "zzwu" :player-info {:bank 100} :seat-no 3 :game-event :join-room})
+(def join-room-msg {:player-id "zzwu" :player-info {:bank 100} :seat-no 3 :game-event :join-room :join-time 1000})
 
 (facts "test handle join-room event"
        (let [room init-room
-             except-seat-3 {:player-id "zzwu" :player-info {:bank 100} :seat-no 3}]
+             except-seat-3 {:player-id "zzwu" :player-info {:bank 100} :seat-no 3
+                            :state :init :join-time 1000}]
          (get-in (handle-game-event room join-room-msg) [:seats 3]) => except-seat-3))
 
 (facts "test handle ready event"
@@ -67,8 +68,8 @@
          (:last-bid new-room) => 50))
 
 (facts "test pk-result handler"
-       (let [messages [{:player-id "zzwu"  :game-event :join-room :player-info {:bank 100} :seat-no 0}
-                       {:player-id "cdf"  :game-event :join-room :player-info {:bank 100} :seat-no 1}
+       (let [messages [{:player-id "zzwu"  :game-event :join-room :player-info {:bank 100} :seat-no 0 :join-time 1000}
+                       {:player-id "cdf"  :game-event :join-room :player-info {:bank 100} :seat-no 1 :join-time 1000}
                        {:seat-no 0 :game-event :ready}
                        {:seat-no 1 :game-event :ready}
                        {:game-event :start-game :into-game-seats [0 1]}
@@ -88,8 +89,8 @@
                       :last-bid 30,
                       :max-bid 100, :max-player-count 6, :min-add 10,
                       :pot 110,
-                      :seats {0 {:amount 70, :cards [{:rank 6, :suit :clubs} {:rank 8, :suit :clubs} {:rank 5, :suit :clubs}], :player-id "zzwu", :player-info {:bank 140}, :seat-no 0, :state :in},
-                              1 {:amount 40, :cards [{:rank 3, :suit :clubs} {:rank 7, :suit :clubs} {:rank 10, :suit :clubs}], :player-id "cdf", :player-info {:bank 60}, :seat-no 1, :state :out}},
+                      :seats {0 {:amount 70, :cards [{:rank 6, :suit :clubs} {:rank 8, :suit :clubs} {:rank 5, :suit :clubs}], :player-id "zzwu", :player-info {:bank 140}, :seat-no 0, :state :in :join-time 1000},
+                              1 {:amount 40, :cards [{:rank 3, :suit :clubs} {:rank 7, :suit :clubs} {:rank 10, :suit :clubs}], :player-id "cdf", :player-info {:bank 60}, :seat-no 1, :state :out :join-time 1000}},
                       :winner {:amount 110, :seat-no 0}}))
 
 
@@ -123,9 +124,9 @@
        (first (seats-no-cycle 5 [0 1 2 3 4 5])) => 0)
 
 (facts "start-game test"
-       (let [actions [{:game-action :join-room :seat-no 0 :player-id "zzwu" :player-info {:bank 1000}}
-                      {:game-action :join-room :seat-no 1 :player-id "ddy" :player-info {:bank 1000}}
-                      {:game-action :join-room :seat-no 2 :player-id "cdf" :player-info {:bank 1000}}
+       (let [actions [{:game-action :join-room :seat-no 0 :player-id "zzwu" :player-info {:bank 1000} :join-time 1000}
+                      {:game-action :join-room :seat-no 1 :player-id "ddy" :player-info {:bank 1000} :join-time 1000}
+                      {:game-action :join-room :seat-no 2 :player-id "cdf" :player-info {:bank 1000} :join-time 1000}
                       {:game-action :ready :player-id "zzwu"}
                       {:game-action :ready :player-id "ddy"}
                       {:game-action :ready :player-id "cdf"}
@@ -150,12 +151,12 @@
                             :max-player-count 6,
                             :min-add 10, :pot 0,
                             :current-player {:current-index 2, :enable-actions {:bid (list 10 20 50), :fold true, :reverse true}},
-                            :seats {0 {:cards [{:rank 4, :suit :spades} {:rank 13, :suit :hearts} {:rank 10, :suit :diamonds}], :player-id "zzwu" :player-info {:bank 1000}, :seat-no 0, :state :in},
-                                    1 {:cards [{:rank 4, :suit :clubs} {:rank 9, :suit :spades} {:rank 10, :suit :hearts}], :player-id "ddy" :player-info {:bank 1000}, :seat-no 1, :state :in},
-                                    2 {:cards [{:rank 8, :suit :diamonds} {:rank 13, :suit :spades} {:rank 14, :suit :clubs}], :player-id "cdf" :player-info {:bank 1000}, :seat-no 2, :state :in}}}
-         events => [{:game-event :join-room, :player-id "zzwu", :player-info {:bank 1000}, :seat-no 0}
-                    {:game-event :join-room, :player-id "ddy", :player-info {:bank 1000}, :seat-no 1}
-                    {:game-event :join-room, :player-id "cdf", :player-info {:bank 1000}, :seat-no 2}
+                            :seats {0 {:cards [{:rank 4, :suit :spades} {:rank 13, :suit :hearts} {:rank 10, :suit :diamonds}], :player-id "zzwu" :player-info {:bank 1000}, :seat-no 0, :state :in :join-time 1000},
+                                    1 {:cards [{:rank 4, :suit :clubs} {:rank 9, :suit :spades} {:rank 10, :suit :hearts}], :player-id "ddy" :player-info {:bank 1000}, :seat-no 1, :state :in :join-time 1000},
+                                    2 {:cards [{:rank 8, :suit :diamonds} {:rank 13, :suit :spades} {:rank 14, :suit :clubs}], :player-id "cdf" :player-info {:bank 1000}, :seat-no 2, :state :in :join-time 1000}}}
+         events => [{:game-event :join-room, :player-id "zzwu", :player-info {:bank 1000}, :seat-no 0 :join-time 1000}
+                    {:game-event :join-room, :player-id "ddy", :player-info {:bank 1000}, :seat-no 1 :join-time 1000}
+                    {:game-event :join-room, :player-id "cdf", :player-info {:bank 1000}, :seat-no 2 :join-time 1000}
                     {:game-event :ready, :seat-no 0}
                     {:game-event :ready, :seat-no 1}
                     {:game-event :ready, :seat-no 2}
