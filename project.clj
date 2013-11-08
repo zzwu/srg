@@ -6,4 +6,5 @@
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [aleph "0.3.0-beta7"]
                  [org.clojure/tools.logging "0.2.6"]
-                 [log4j "1.2.16"]])
+                 [log4j "1.2.16"]]
+  :plugins [[lein-midje "3.1.1"]])
